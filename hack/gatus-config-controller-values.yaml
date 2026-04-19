@@ -1,0 +1,60 @@
+logLevel: debug
+
+gatus:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - gatus.local
+
+staticConfig:
+  endpoints:
+    - name: example
+      url: https://example.org
+      interval: 60s
+      conditions:
+        - "[STATUS] == 200"
+
+config:
+  # Default checks generated for every discovered ingress host.
+  # Override per-selector with `checks:` on an individual selector.
+  defaultChecks:
+    - nameSuffix: http-redirect
+      scheme: http
+      interval: 60s
+      noFollowRedirects: true
+      conditions:
+        - "[STATUS] == 301"
+    - nameSuffix: https
+      scheme: https
+      interval: 60s
+      conditions:
+        - "[STATUS] == 200"
+    - nameSuffix: oauth2-redirect
+      scheme: https
+      interval: 60s
+      noFollowRedirects: true
+      conditions:
+        - "[STATUS] == 302"
+        - "[RESPONSE_HEADER.Location] == *OAUTH2_DOMAIN_PLACEHOLDER*"
+
+  ingresses:
+    # Select all ingresses in the default namespace
+    - namespaces:
+        include: [default]
+
+    # Select all ingresses with class nginx, except those tagged as internal
+    - ingressClasses:
+        include: [nginx]
+      annotations:
+        exclude:
+          - key: visibility
+            value: internal
+
+    # Select ingresses with class apps, but only production ones
+    - ingressClasses:
+        include: [apps]
+      labels:
+        include:
+          - key: env
+            value: prod

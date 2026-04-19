@@ -1,0 +1,78 @@
+image:
+  repository: ghcr.io/belitre/gatus-config-controller
+  tag: canary
+  pullPolicy: IfNotPresent
+
+# Log level: debug, info, error (default: info)
+logLevel: ""
+
+# Namespace and name of the ConfigMap written by the controller
+configMapNamespace: default
+configMapName: gatus-dynamic-config
+
+# Controller config — ingress selection and check templates.
+#
+# INGRESS SELECTION (config.ingresses)
+# ─────────────────────────────────────
+# The key distinction is nil vs. empty:
+#
+#   config: {}                  ← ingresses key absent → select ALL ingresses
+#   config:
+#     ingresses: []             ← empty list → select NO ingresses
+#   config:
+#     ingresses: [...]          ← one or more selectors → select matching ingresses
+#
+# Selectors are ORed: an ingress is selected if it matches ANY selector.
+# Within a selector, all filters are ANDed.
+#
+# Available filters per selector:
+#   namespaces:
+#     include: [default, production]   # must be in this list
+#     exclude: [kube-system]           # must not be in this list
+#   ingressClasses:
+#     include: [nginx]
+#     exclude: [internal]
+#   labels:
+#     include:
+#       - key: env
+#         value: prod                  # all include pairs must be present
+#     exclude:
+#       - key: visibility
+#         value: internal              # none of the exclude pairs may match
+#   annotations:
+#     include: [...]
+#     exclude: [...]
+#
+# CHECK TEMPLATES (config.defaultChecks / selector.checks)
+# ─────────────────────────────────────────────────────────
+# Controls what Gatus checks are generated per host.
+# Priority: selector.checks > config.defaultChecks > builtin (single HTTPS check).
+#
+# Each template produces one Gatus endpoint per host:
+#   nameSuffix: http-redirect          # appended to endpoint name: "ns/name - http-redirect"
+#   scheme: http                       # "http" or "https" — sets the URL scheme
+#   interval: 60s
+#   noFollowRedirects: true            # sets client.ignore-redirect: true in Gatus
+#   conditions:
+#     - "[STATUS] == 301"
+#     - "[RESPONSE_HEADER.Location] == *example.com*"   # glob match
+#
+# If nameSuffix is empty, the endpoint name is just "namespace/name".
+#
+config: {}
+
+# Static Gatus endpoints written to the Gatus config ConfigMap as static.yaml.
+# These are merged by Gatus alongside the dynamic endpoints the controller discovers.
+staticConfig: {}
+
+# Gatus subchart defaults — configures Gatus to read config from the shared ConfigMap.
+gatus:
+  fullnameOverride: gatus
+  externalConfigMap: gatus-dynamic-config
+  env:
+    GATUS_CONFIG_PATH: /config
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    hosts:
+      - gatus.local

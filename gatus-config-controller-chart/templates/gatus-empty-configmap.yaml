@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gatus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gatus-config-controller.labels" . | nindent 4 }}
