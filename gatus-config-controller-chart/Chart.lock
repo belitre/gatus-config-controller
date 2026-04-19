@@ -1,0 +1,6 @@
+dependencies:
+- name: gatus
+  repository: https://twin.github.io/helm-charts
+  version: 1.5.0
+digest: sha256:0ad37d858191e6635e9d70b9eeb5a05803272f8f7c3afc22ecd1eaa469829e40
+generated: "2026-04-19T15:41:53.700297+01:00"

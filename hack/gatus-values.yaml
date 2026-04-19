@@ -1,0 +1,10 @@
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - gatus.local
+
+externalConfigMap: gatus-dynamic-config
+
+env:
+  GATUS_CONFIG_PATH: /config
