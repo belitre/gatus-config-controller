@@ -23,6 +23,7 @@ config:
       scheme: http
       interval: 60s
       noFollowRedirects: true
+      group: http-redirect
       conditions:
         - "[STATUS] == 301"
     - nameSuffix: https

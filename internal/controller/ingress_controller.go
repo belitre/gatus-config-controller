@@ -43,7 +43,7 @@ type IngressReconciler struct {
 	DefaultChecks      []config.CheckTemplate
 	WatchHTTPRoutes    bool
 	HTTPRouteSelectors []config.HTTPRouteSelector
-	StaticConfig       interface{}
+	StaticConfig       any
 }
 
 type gatusClient struct {
@@ -56,12 +56,13 @@ type gatusDNS struct {
 }
 
 type gatusEndpoint struct {
-	Name       string       `yaml:"name"`
-	URL        string       `yaml:"url"`
-	Interval   string       `yaml:"interval"`
-	Conditions []string     `yaml:"conditions"`
-	Client     *gatusClient `yaml:"client,omitempty"`
-	DNS        *gatusDNS    `yaml:"dns,omitempty"`
+	Name       string                 `yaml:"name"`
+	URL        string                 `yaml:"url"`
+	Interval   string                 `yaml:"interval"`
+	Conditions []string               `yaml:"conditions"`
+	Client     *gatusClient           `yaml:"client,omitempty"`
+	DNS        *gatusDNS              `yaml:"dns,omitempty"`
+	Extra      map[string]any `yaml:",inline"`
 }
 
 type gatusConfig struct {
@@ -99,6 +100,7 @@ func buildEndpoint(name, host string, tmpl config.CheckTemplate) gatusEndpoint {
 		Name:       name,
 		Interval:   interval,
 		Conditions: conditions,
+		Extra:      tmpl.Extra,
 	}
 	if tmpl.DNS != nil {
 		ep.URL = tmpl.DNS.NameServer

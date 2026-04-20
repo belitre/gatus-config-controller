@@ -10,18 +10,21 @@ type Config struct {
 	DefaultChecks []CheckTemplate     `yaml:"defaultChecks,omitempty"`
 	Ingresses     []IngressSelector   `yaml:"ingresses,omitempty"`
 	HTTPRoutes    []HTTPRouteSelector `yaml:"httpRoutes,omitempty"`
-	StaticConfig  interface{}         `yaml:"staticConfig,omitempty"`
+	StaticConfig  any         `yaml:"staticConfig,omitempty"`
 }
 
 // CheckTemplate defines one Gatus check to generate per host.
 // Set either Scheme (HTTP/HTTPS check) or DNS (DNS check), not both.
+// Any additional Gatus endpoint fields (e.g. group, alerts, headers, ui) can be
+// set directly alongside the known fields — they are passed through as-is.
 type CheckTemplate struct {
-	NameSuffix        string    `yaml:"nameSuffix,omitempty"`
-	Scheme            string    `yaml:"scheme,omitempty"`
-	Interval          string    `yaml:"interval,omitempty"`
-	Conditions        []string  `yaml:"conditions,omitempty"`
-	NoFollowRedirects bool      `yaml:"noFollowRedirects,omitempty"`
-	DNS               *DNSCheck `yaml:"dns,omitempty"`
+	NameSuffix        string         `yaml:"nameSuffix,omitempty"`
+	Scheme            string         `yaml:"scheme,omitempty"`
+	Interval          string         `yaml:"interval,omitempty"`
+	Conditions        []string       `yaml:"conditions,omitempty"`
+	NoFollowRedirects bool           `yaml:"noFollowRedirects,omitempty"`
+	DNS               *DNSCheck      `yaml:"dns,omitempty"`
+	Extra             map[string]any `yaml:",inline"`
 }
 
 // DNSCheck configures a Gatus DNS check. The discovered hostname is used as the query-name.

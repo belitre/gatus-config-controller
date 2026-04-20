@@ -64,7 +64,7 @@ func main() {
 	var selectors []config.IngressSelector
 	var defaultChecks []config.CheckTemplate
 	var httpRouteSelectors []config.HTTPRouteSelector
-	var staticConfig interface{}
+	var staticConfig any
 	if configPath != "" {
 		cfg, err := config.Load(configPath)
 		if err != nil {
