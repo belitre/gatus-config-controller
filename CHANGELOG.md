@@ -1,3 +1,9 @@
+## [1.3.0](https://github.com/belitre/gatus-config-controller/compare/v1.2.0...v1.3.0) (2026-04-20)
+
+### Features
+
+* add support for more fields on endpoints config ([74797fa](https://github.com/belitre/gatus-config-controller/commit/74797faa0b34f49c659a38b5e6a0c35bd83b241c))
+
 ## [1.2.0](https://github.com/belitre/gatus-config-controller/compare/v1.1.2...v1.2.0) (2026-04-20)
 
 ### Features
