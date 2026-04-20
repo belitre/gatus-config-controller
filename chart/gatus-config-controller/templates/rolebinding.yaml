@@ -2,7 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ include "gatus-config-controller.fullname" . }}
-  namespace: {{ .Values.configMapNamespace }}
+  namespace: {{ .Values.configMapNamespace | default .Release.Namespace }}
   labels:
     {{- include "gatus-config-controller.labels" . | nindent 4 }}
 roleRef:

@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/belitre/gatus-config-controller
-  tag: canary
+  tag: ""
   pullPolicy: IfNotPresent
 
 # Number of controller replicas. Set to >1 together with leaderElection.enabled=true for HA.
