@@ -1,7 +1,9 @@
+{{- if .Values.gatus.externalConfigMap }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: gatus
+  name: {{ .Values.gatus.fullnameOverride | default .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "gatus-config-controller.labels" . | nindent 4 }}
+{{- end }}

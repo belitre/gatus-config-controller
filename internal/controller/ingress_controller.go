@@ -43,6 +43,7 @@ type IngressReconciler struct {
 	DefaultChecks      []config.CheckTemplate
 	WatchHTTPRoutes    bool
 	HTTPRouteSelectors []config.HTTPRouteSelector
+	StaticConfig       interface{}
 }
 
 type gatusClient struct {
@@ -200,9 +201,20 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		endpoints = []gatusEndpoint{}
 	}
 
-	data, err := yaml.Marshal(gatusConfig{Endpoints: endpoints})
+	dynamicYAML, err := yaml.Marshal(gatusConfig{Endpoints: endpoints})
 	if err != nil {
 		return ctrl.Result{}, err
+	}
+
+	newData := map[string]string{
+		"dynamic.yaml": string(dynamicYAML),
+	}
+	if r.StaticConfig != nil {
+		staticYAML, err := yaml.Marshal(r.StaticConfig)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		newData["static.yaml"] = string(staticYAML)
 	}
 
 	existing := &corev1.ConfigMap{}
@@ -216,7 +228,7 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				Name:      r.ConfigMapName,
 				Namespace: r.ConfigMapNamespace,
 			},
-			Data: map[string]string{"dynamic.yaml": string(data)},
+			Data: newData,
 		}
 		log.Info("creating configmap")
 		return ctrl.Result{}, r.Create(ctx, cm)
@@ -225,11 +237,8 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	if existing.Data == nil {
-		existing.Data = map[string]string{}
-	}
-
-	if existing.Data["dynamic.yaml"] == string(data) {
+	if existing.Data["dynamic.yaml"] == newData["dynamic.yaml"] &&
+		existing.Data["static.yaml"] == newData["static.yaml"] {
 		log.V(1).Info("configmap unchanged, skipping update")
 		return ctrl.Result{}, nil
 	}
@@ -256,7 +265,7 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
-	existing.Data["dynamic.yaml"] = string(data)
+	existing.Data = newData
 	log.Info("updating configmap")
 	return ctrl.Result{}, r.Update(ctx, existing)
 }

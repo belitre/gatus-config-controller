@@ -89,13 +89,27 @@ watchHTTPRoutes: false
 #
 # If nameSuffix is empty, the endpoint name is just "namespace/name".
 #
+# config.staticConfig — arbitrary Gatus YAML written to static.yaml in the ConfigMap.
+# The controller merges it alongside the dynamic endpoints it discovers.
+# Example:
+#   config:
+#     staticConfig:
+#       endpoints:
+#         - name: my-static-check
+#           url: https://example.org
+#           interval: 60s
+#           conditions:
+#             - "[STATUS] == 200"
 config: {}
 
-# Static Gatus endpoints written to the Gatus config ConfigMap as static.yaml.
-# These are merged by Gatus alongside the dynamic endpoints the controller discovers.
-staticConfig: {}
-
-# Gatus subchart defaults — configures Gatus to read config from the shared ConfigMap.
+# Gatus subchart — tells Gatus to read config from the controller-managed ConfigMap.
+#
+# IMPORTANT: gatus.externalConfigMap must match configMapName above.
+# If you change one, change the other.
+#
+# gatus.fullnameOverride sets the name of the Gatus Service/Deployment. It is also
+# used to create a placeholder ConfigMap required by the Gatus chart internals when
+# externalConfigMap is set. If you change fullnameOverride, update that template too.
 gatus:
   fullnameOverride: gatus
   externalConfigMap: gatus-dynamic-config

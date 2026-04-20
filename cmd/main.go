@@ -64,6 +64,7 @@ func main() {
 	var selectors []config.IngressSelector
 	var defaultChecks []config.CheckTemplate
 	var httpRouteSelectors []config.HTTPRouteSelector
+	var staticConfig interface{}
 	if configPath != "" {
 		cfg, err := config.Load(configPath)
 		if err != nil {
@@ -73,6 +74,7 @@ func main() {
 		selectors = cfg.Ingresses
 		defaultChecks = cfg.DefaultChecks
 		httpRouteSelectors = cfg.HTTPRoutes
+		staticConfig = cfg.StaticConfig
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -115,6 +117,7 @@ func main() {
 		DefaultChecks:      defaultChecks,
 		WatchHTTPRoutes:    watchHTTPRoutes,
 		HTTPRouteSelectors: httpRouteSelectors,
+		StaticConfig:       staticConfig,
 	}).SetupWithManager(mgr); err != nil {
 		ctrl.Log.Error(err, "unable to create ingress controller")
 		os.Exit(1)

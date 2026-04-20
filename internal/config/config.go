@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	DefaultChecks []CheckTemplate      `yaml:"defaultChecks,omitempty"`
-	Ingresses     []IngressSelector    `yaml:"ingresses,omitempty"`
-	HTTPRoutes    []HTTPRouteSelector  `yaml:"httpRoutes,omitempty"`
+	DefaultChecks []CheckTemplate     `yaml:"defaultChecks,omitempty"`
+	Ingresses     []IngressSelector   `yaml:"ingresses,omitempty"`
+	HTTPRoutes    []HTTPRouteSelector `yaml:"httpRoutes,omitempty"`
+	StaticConfig  interface{}         `yaml:"staticConfig,omitempty"`
 }
 
 // CheckTemplate defines one Gatus check to generate per host.

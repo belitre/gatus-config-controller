@@ -7,15 +7,15 @@ gatus:
     hosts:
       - gatus.local
 
-staticConfig:
-  endpoints:
-    - name: example
-      url: https://example.org
-      interval: 60s
-      conditions:
-        - "[STATUS] == 200"
-
 config:
+  staticConfig:
+    endpoints:
+      - name: example
+        url: https://example.org
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+
   # Default checks generated for every discovered ingress host.
   # Override per-selector with `checks:` on an individual selector.
   defaultChecks:

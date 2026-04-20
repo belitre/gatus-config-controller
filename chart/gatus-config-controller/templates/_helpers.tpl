@@ -1,5 +1,5 @@
 {{- define "gatus-config-controller.fullname" -}}
-{{- printf "%s" .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-controller" .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{- define "gatus-config-controller.labels" -}}
