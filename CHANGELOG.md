@@ -1,3 +1,9 @@
+## [1.1.1](https://github.com/belitre/gatus-config-controller/compare/v1.1.0...v1.1.1) (2026-04-20)
+
+### Bug Fixes
+
+* do not set default namespace by default ([c8dc9f0](https://github.com/belitre/gatus-config-controller/commit/c8dc9f0e056c7f2dc05d9c88f4e35d96466a8b4c))
+
 ## [1.1.0](https://github.com/belitre/gatus-config-controller/compare/v1.0.0...v1.1.0) (2026-04-20)
 
 ### Features
