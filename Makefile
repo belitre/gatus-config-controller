@@ -51,21 +51,21 @@ docker-build-push: docker-build docker-push
 # ── Helm ──────────────────────────────────────────────────────────────────────
 
 helm-validate:
-	helm dependency update ./gatus-config-controller-chart
-	helm lint ./gatus-config-controller-chart
-	helm template test ./gatus-config-controller-chart
-	helm template test ./gatus-config-controller-chart --values hack/gatus-config-controller-values.yaml
+	helm dependency update ./chart/gatus-config-controller
+	helm lint ./chart/gatus-config-controller
+	helm template test ./chart/gatus-config-controller
+	helm template test ./chart/gatus-config-controller --values hack/gatus-config-controller-values.yaml
 
 helm-login:
 	echo "$(CR_TOKEN)" | helm registry login ghcr.io -u $(CR_USER) --password-stdin
 
 helm-package:
-	helm dependency update ./gatus-config-controller-chart
-	helm package ./gatus-config-controller-chart --version $(CHART_VERSION) --app-version $(CHART_VERSION)
+	helm dependency update ./chart/gatus-config-controller
+	helm package ./chart/gatus-config-controller --version $(CHART_VERSION) --app-version $(CHART_VERSION)
 
 helm-push: helm-package
-	helm push gatus-config-controller-chart-$(CHART_VERSION).tgz oci://$(CHART_REGISTRY)
-	rm -f gatus-config-controller-chart-$(CHART_VERSION).tgz
+	helm push gatus-config-controller-$(CHART_VERSION).tgz oci://$(CHART_REGISTRY)
+	rm -f gatus-config-controller-$(CHART_VERSION).tgz
 
 # ── Semantic Release ──────────────────────────────────────────────────────────
 
@@ -91,8 +91,8 @@ env-up:
 	kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=300s
 	$(MAKE) docker-build
 	kind load docker-image $(IMAGE):$(VERSION) --name $(CLUSTER_NAME)
-	helm dependency update ./gatus-config-controller-chart
-	helm install gatus-config-controller ./gatus-config-controller-chart --values hack/gatus-config-controller-values.yaml
+	helm dependency update ./chart/gatus-config-controller
+	helm install gatus-config-controller ./chart/gatus-config-controller --values hack/gatus-config-controller-values.yaml
 
 preload-images:
 	@for img in $(PRELOAD_IMAGES); do \

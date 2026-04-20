@@ -3,12 +3,29 @@ image:
   tag: canary
   pullPolicy: IfNotPresent
 
+# Number of controller replicas. Set to >1 together with leaderElection.enabled=true for HA.
+replicaCount: 1
+
 # Log level: debug, info, error (default: info)
 logLevel: ""
+
+# Leader election — required when running more than one replica.
+# resourceLock: "leases" (default, uses coordination.k8s.io/Lease) or
+#               "configmaps" (uses core/v1 ConfigMap in the release namespace)
+leaderElection:
+  enabled: false
+  id: gatus-config-controller
+  resourceLock: leases
 
 # Namespace and name of the ConfigMap written by the controller
 configMapNamespace: default
 configMapName: gatus-dynamic-config
+
+# Enable watching HTTPRoute resources (gateway.networking.k8s.io/v1).
+# Requires the Gateway API CRDs to be installed in the cluster.
+# If enabled and the CRDs are not present the controller will fail to start.
+# When enabled, config.httpRoutes follows the same nil/empty/list semantics as config.ingresses.
+watchHTTPRoutes: false
 
 # Controller config — ingress selection and check templates.
 #
@@ -42,6 +59,18 @@ configMapName: gatus-dynamic-config
 #   annotations:
 #     include: [...]
 #     exclude: [...]
+#
+# HTTPROUTE SELECTION (config.httpRoutes) — only used when watchHTTPRoutes=true
+# ─────────────────────────────────────────────────────────────────────────────
+# Same nil/empty/list semantics as config.ingresses (no ingressClasses filter):
+#
+#   config: {}                  ← httpRoutes key absent → select ALL HTTPRoutes
+#   config:
+#     httpRoutes: []            ← empty list → select NO HTTPRoutes
+#   config:
+#     httpRoutes: [...]         ← one or more selectors → select matching HTTPRoutes
+#
+# Available filters per selector: namespaces, labels, annotations (same as ingresses).
 #
 # CHECK TEMPLATES (config.defaultChecks / selector.checks)
 # ─────────────────────────────────────────────────────────
