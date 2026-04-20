@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/belitre/gatus-config-controller/compare/v1.1.2...v1.2.0) (2026-04-20)
+
+### Features
+
+* manage static and dynamic config ([fd26e63](https://github.com/belitre/gatus-config-controller/commit/fd26e6327752402ce5e989eda0ba794df298924f))
+
 ## [1.1.2](https://github.com/belitre/gatus-config-controller/compare/v1.1.1...v1.1.2) (2026-04-20)
 
 ### Bug Fixes
