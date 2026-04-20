@@ -1,3 +1,9 @@
+## [1.4.1](https://github.com/belitre/gatus-config-controller/compare/v1.4.0...v1.4.1) (2026-04-20)
+
+### Bug Fixes
+
+* restart pods on config change ([6b5e001](https://github.com/belitre/gatus-config-controller/commit/6b5e001b6283ccb30bbe79e7637ded82833f3857))
+
 ## [1.4.0](https://github.com/belitre/gatus-config-controller/compare/v1.3.0...v1.4.0) (2026-04-20)
 
 ### Features
