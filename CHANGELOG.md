@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/belitre/gatus-config-controller/compare/v1.3.0...v1.4.0) (2026-04-20)
+
+### Features
+
+* filter routes by parentref ([015de51](https://github.com/belitre/gatus-config-controller/commit/015de518f4def8c101f3b07e89de1e8e00d9e69b))
+
 ## [1.3.0](https://github.com/belitre/gatus-config-controller/compare/v1.2.0...v1.3.0) (2026-04-20)
 
 ### Features
