@@ -1,5 +1,5 @@
 apiVersion: v2
-name: gatus-config-controller-chart
+name: gatus-config-controller
 description: Kubernetes controller that generates Gatus endpoint config from Ingress and HTTPRoute resources
 type: application
 version: 0.1.0

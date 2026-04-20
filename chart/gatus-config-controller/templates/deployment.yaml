@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "gatus-config-controller.labels" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       {{- include "gatus-config-controller.selectorLabels" . | nindent 6 }}
@@ -26,6 +26,14 @@ spec:
             - --config=/etc/gatus-config-controller/config.yaml
             {{- if .Values.logLevel }}
             - --zap-log-level={{ .Values.logLevel }}
+            {{- end }}
+            {{- if .Values.leaderElection.enabled }}
+            - --leader-elect=true
+            - --leader-election-id={{ .Values.leaderElection.id }}
+            - --leader-election-resource-lock={{ .Values.leaderElection.resourceLock }}
+            {{- end }}
+            {{- if .Values.watchHTTPRoutes }}
+            - --watch-httproutes=true
             {{- end }}
           volumeMounts:
             - name: config

@@ -8,3 +8,8 @@ rules:
   - apiGroups: ["networking.k8s.io"]
     resources: ["ingresses"]
     verbs: ["list", "watch"]
+  {{- if .Values.watchHTTPRoutes }}
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes"]
+    verbs: ["list", "watch"]
+  {{- end }}

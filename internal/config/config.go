@@ -7,18 +7,35 @@ import (
 )
 
 type Config struct {
-	DefaultChecks []CheckTemplate   `yaml:"defaultChecks,omitempty"`
-	Ingresses     []IngressSelector `yaml:"ingresses,omitempty"`
+	DefaultChecks []CheckTemplate      `yaml:"defaultChecks,omitempty"`
+	Ingresses     []IngressSelector    `yaml:"ingresses,omitempty"`
+	HTTPRoutes    []HTTPRouteSelector  `yaml:"httpRoutes,omitempty"`
 }
 
 // CheckTemplate defines one Gatus check to generate per host.
-// Scheme and NameSuffix together identify the check within an ingress.
+// Set either Scheme (HTTP/HTTPS check) or DNS (DNS check), not both.
 type CheckTemplate struct {
-	NameSuffix        string   `yaml:"nameSuffix,omitempty"`
-	Scheme            string   `yaml:"scheme"` // "http" or "https"
-	Interval          string   `yaml:"interval,omitempty"`
-	Conditions        []string `yaml:"conditions,omitempty"`
-	NoFollowRedirects bool     `yaml:"noFollowRedirects,omitempty"`
+	NameSuffix        string    `yaml:"nameSuffix,omitempty"`
+	Scheme            string    `yaml:"scheme,omitempty"`
+	Interval          string    `yaml:"interval,omitempty"`
+	Conditions        []string  `yaml:"conditions,omitempty"`
+	NoFollowRedirects bool      `yaml:"noFollowRedirects,omitempty"`
+	DNS               *DNSCheck `yaml:"dns,omitempty"`
+}
+
+// DNSCheck configures a Gatus DNS check. The discovered hostname is used as the query-name.
+type DNSCheck struct {
+	NameServer string `yaml:"nameServer"`
+	QueryType  string `yaml:"queryType"`
+}
+
+// HTTPRouteSelector selects HTTPRoute resources. Unlike IngressSelector there is no
+// class filter — any HTTPRoute with at least one hostname qualifies.
+type HTTPRouteSelector struct {
+	Namespaces  *StringFilter   `yaml:"namespaces,omitempty"`
+	Labels      *KeyValueFilter `yaml:"labels,omitempty"`
+	Annotations *KeyValueFilter `yaml:"annotations,omitempty"`
+	Checks      []CheckTemplate `yaml:"checks,omitempty"`
 }
 
 type IngressSelector struct {

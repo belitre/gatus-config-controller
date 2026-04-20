@@ -37,6 +37,13 @@ config:
       conditions:
         - "[STATUS] == 302"
         - "[RESPONSE_HEADER.Location] == *OAUTH2_DOMAIN_PLACEHOLDER*"
+    - nameSuffix: dns
+      interval: 60s
+      dns:
+        nameServer: "8.8.8.8"
+        queryType: A
+      conditions:
+        - "[DNS_RCODE] == NOERROR"
 
   ingresses:
     # Select all ingresses in the default namespace
