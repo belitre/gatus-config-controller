@@ -17,8 +17,9 @@ leaderElection:
   id: gatus-config-controller
   resourceLock: leases
 
-# Namespace and name of the ConfigMap written by the controller
-configMapNamespace: default
+# Namespace and name of the ConfigMap written by the controller.
+# configMapNamespace defaults to the release namespace when left empty.
+configMapNamespace: ""
 configMapName: gatus-dynamic-config
 
 # Enable watching HTTPRoute resources (gateway.networking.k8s.io/v1).

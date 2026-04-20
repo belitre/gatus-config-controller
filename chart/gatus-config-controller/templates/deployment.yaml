@@ -21,7 +21,7 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - --configmap-namespace={{ .Values.configMapNamespace }}
+            - --configmap-namespace={{ .Values.configMapNamespace | default .Release.Namespace }}
             - --configmap-name={{ .Values.configMapName }}
             - --config=/etc/gatus-config-controller/config.yaml
             {{- if .Values.logLevel }}
