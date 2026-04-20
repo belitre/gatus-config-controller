@@ -60,6 +60,65 @@ func matchesSelector(log logr.Logger, selectorIdx int, route gwv1.HTTPRoute, sel
 		log.V(1).Info("httproute did not match selector: annotation filter", "httproute", key, "selector", selectorIdx)
 		return false
 	}
+	if sel.ParentRefs != nil && !matchParentRefFilter(route.Spec.ParentRefs, sel.ParentRefs) {
+		log.V(1).Info("httproute did not match selector: parentRef filter", "httproute", key, "selector", selectorIdx)
+		return false
+	}
+	return true
+}
+
+func matchParentRefFilter(refs []gwv1.ParentReference, f *config.ParentRefFilter) bool {
+	if len(f.Include) > 0 {
+		found := false
+		for _, ref := range refs {
+			for _, sel := range f.Include {
+				if matchParentRef(ref, sel) {
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	for _, ref := range refs {
+		for _, sel := range f.Exclude {
+			if matchParentRef(ref, sel) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func matchParentRef(ref gwv1.ParentReference, sel config.ParentRefSelector) bool {
+	if sel.Name != "" && string(ref.Name) != sel.Name {
+		return false
+	}
+	if sel.Namespace != "" {
+		if ref.Namespace == nil || string(*ref.Namespace) != sel.Namespace {
+			return false
+		}
+	}
+	if sel.Group != "" {
+		if ref.Group == nil || string(*ref.Group) != sel.Group {
+			return false
+		}
+	}
+	if sel.Kind != "" {
+		if ref.Kind == nil || string(*ref.Kind) != sel.Kind {
+			return false
+		}
+	}
+	if sel.SectionName != "" {
+		if ref.SectionName == nil || string(*ref.SectionName) != sel.SectionName {
+			return false
+		}
+	}
 	return true
 }
 

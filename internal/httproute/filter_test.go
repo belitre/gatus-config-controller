@@ -51,6 +51,14 @@ func containsSame(got []string, want []string) bool {
 	return true
 }
 
+func ptr[T any](v T) *T { return &v }
+
+func makeRouteWithParentRefs(name, namespace string, hostnames []string, parents []gwv1.ParentReference) gwv1.HTTPRoute {
+	route := makeRoute(name, namespace, hostnames, nil, nil)
+	route.Spec.ParentRefs = parents
+	return route
+}
+
 var testRoutes = []gwv1.HTTPRoute{
 	makeRoute("a", "default", []string{"a.example.com"}, map[string]string{"app": "web"}, nil),
 	makeRoute("b", "default", []string{"b.example.com"}, map[string]string{"app": "api"}, nil),
@@ -121,6 +129,80 @@ func TestFilter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := httproute.Filter(logr.Discard(), testRoutes, tt.selectors)
+			if !containsSame(matchKeys(got), tt.want) {
+				t.Errorf("got %v, want %v", matchKeys(got), tt.want)
+			}
+		})
+	}
+}
+
+func TestFilterParentRefs(t *testing.T) {
+	ns := gwv1.Namespace("gateway-system")
+	sn := gwv1.SectionName("https")
+
+	routes := []gwv1.HTTPRoute{
+		makeRouteWithParentRefs("a", "default", []string{"a.example.com"}, []gwv1.ParentReference{
+			{Name: "public-gateway", Namespace: &ns},
+		}),
+		makeRouteWithParentRefs("b", "default", []string{"b.example.com"}, []gwv1.ParentReference{
+			{Name: "internal-gateway", Namespace: &ns},
+		}),
+		makeRouteWithParentRefs("c", "default", []string{"c.example.com"}, []gwv1.ParentReference{
+			{Name: "public-gateway", Namespace: &ns, SectionName: &sn},
+		}),
+		makeRouteWithParentRefs("d", "default", []string{"d.example.com"}, []gwv1.ParentReference{
+			{Name: "public-gateway"},
+		}),
+		makeRoute("e", "default", []string{"e.example.com"}, nil, nil), // no parentRefs
+	}
+
+	tests := []struct {
+		name      string
+		selectors []config.HTTPRouteSelector
+		want      []string
+	}{
+		{
+			name: "include by gateway name",
+			selectors: []config.HTTPRouteSelector{
+				{ParentRefs: &config.ParentRefFilter{Include: []config.ParentRefSelector{{Name: "public-gateway"}}}},
+			},
+			want: []string{"default/a", "default/c", "default/d"},
+		},
+		{
+			name: "exclude by gateway name",
+			selectors: []config.HTTPRouteSelector{
+				{ParentRefs: &config.ParentRefFilter{Exclude: []config.ParentRefSelector{{Name: "internal-gateway"}}}},
+			},
+			want: []string{"default/a", "default/c", "default/d", "default/e"},
+		},
+		{
+			name: "include by name and namespace",
+			selectors: []config.HTTPRouteSelector{
+				{ParentRefs: &config.ParentRefFilter{Include: []config.ParentRefSelector{{Name: "public-gateway", Namespace: "gateway-system"}}}},
+			},
+			// default/d has no namespace on its parentRef → no match
+			want: []string{"default/a", "default/c"},
+		},
+		{
+			name: "include by sectionName",
+			selectors: []config.HTTPRouteSelector{
+				{ParentRefs: &config.ParentRefFilter{Include: []config.ParentRefSelector{{SectionName: "https"}}}},
+			},
+			want: []string{"default/c"},
+		},
+		{
+			name: "no parentRefs does not match include",
+			selectors: []config.HTTPRouteSelector{
+				{ParentRefs: &config.ParentRefFilter{Include: []config.ParentRefSelector{{Name: "public-gateway"}}}},
+			},
+			// default/e has no parentRefs → not included
+			want: []string{"default/a", "default/c", "default/d"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := httproute.Filter(logr.Discard(), routes, tt.selectors)
 			if !containsSame(matchKeys(got), tt.want) {
 				t.Errorf("got %v, want %v", matchKeys(got), tt.want)
 			}

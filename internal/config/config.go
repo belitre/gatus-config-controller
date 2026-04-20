@@ -33,13 +33,29 @@ type DNSCheck struct {
 	QueryType  string `yaml:"queryType"`
 }
 
-// HTTPRouteSelector selects HTTPRoute resources. Unlike IngressSelector there is no
-// class filter — any HTTPRoute with at least one hostname qualifies.
+// HTTPRouteSelector selects HTTPRoute resources.
 type HTTPRouteSelector struct {
-	Namespaces  *StringFilter   `yaml:"namespaces,omitempty"`
-	Labels      *KeyValueFilter `yaml:"labels,omitempty"`
-	Annotations *KeyValueFilter `yaml:"annotations,omitempty"`
-	Checks      []CheckTemplate `yaml:"checks,omitempty"`
+	Namespaces  *StringFilter    `yaml:"namespaces,omitempty"`
+	Labels      *KeyValueFilter  `yaml:"labels,omitempty"`
+	Annotations *KeyValueFilter  `yaml:"annotations,omitempty"`
+	ParentRefs  *ParentRefFilter `yaml:"parentRefs,omitempty"`
+	Checks      []CheckTemplate  `yaml:"checks,omitempty"`
+}
+
+// ParentRefFilter filters HTTPRoutes by their parentRefs (e.g. which Gateway they attach to).
+type ParentRefFilter struct {
+	Include []ParentRefSelector `yaml:"include,omitempty"`
+	Exclude []ParentRefSelector `yaml:"exclude,omitempty"`
+}
+
+// ParentRefSelector matches a parentRef entry. All non-empty fields must match.
+// Empty fields act as wildcards.
+type ParentRefSelector struct {
+	Group       string `yaml:"group,omitempty"`
+	Kind        string `yaml:"kind,omitempty"`
+	Name        string `yaml:"name,omitempty"`
+	Namespace   string `yaml:"namespace,omitempty"`
+	SectionName string `yaml:"sectionName,omitempty"`
 }
 
 type IngressSelector struct {
