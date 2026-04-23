@@ -49,19 +49,19 @@ func Filter(log logr.Logger, routes []gwv1.HTTPRoute, selectors []config.HTTPRou
 func matchesSelector(log logr.Logger, selectorIdx int, route gwv1.HTTPRoute, sel config.HTTPRouteSelector) bool {
 	key := route.Namespace + "/" + route.Name
 	if sel.Namespaces != nil && !matchStringFilter(route.Namespace, sel.Namespaces) {
-		log.V(1).Info("httproute did not match selector: namespace filter", "httproute", key, "selector", selectorIdx, "namespace", route.Namespace)
+		log.V(1).Info("httproute did not match selector: namespace filter", "httproute", key, "selector", selectorIdx, "namespace", route.Namespace, "include", sel.Namespaces.Include, "exclude", sel.Namespaces.Exclude)
 		return false
 	}
 	if sel.Labels != nil && !matchKeyValueFilter(route.Labels, sel.Labels) {
-		log.V(1).Info("httproute did not match selector: label filter", "httproute", key, "selector", selectorIdx)
+		log.V(1).Info("httproute did not match selector: label filter", "httproute", key, "selector", selectorIdx, "routeLabels", route.Labels, "include", sel.Labels.Include, "exclude", sel.Labels.Exclude)
 		return false
 	}
 	if sel.Annotations != nil && !matchKeyValueFilter(route.Annotations, sel.Annotations) {
-		log.V(1).Info("httproute did not match selector: annotation filter", "httproute", key, "selector", selectorIdx)
+		log.V(1).Info("httproute did not match selector: annotation filter", "httproute", key, "selector", selectorIdx, "routeAnnotations", route.Annotations, "include", sel.Annotations.Include, "exclude", sel.Annotations.Exclude)
 		return false
 	}
 	if sel.ParentRefs != nil && !matchParentRefFilter(route.Spec.ParentRefs, sel.ParentRefs) {
-		log.V(1).Info("httproute did not match selector: parentRef filter", "httproute", key, "selector", selectorIdx)
+		log.V(1).Info("httproute did not match selector: parentRef filter", "httproute", key, "selector", selectorIdx, "routeParentRefs", route.Spec.ParentRefs, "include", sel.ParentRefs.Include, "exclude", sel.ParentRefs.Exclude)
 		return false
 	}
 	return true

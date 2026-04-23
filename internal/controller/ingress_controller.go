@@ -283,7 +283,7 @@ func (r *IngressReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	})
 
 	builder := ctrl.NewControllerManagedBy(mgr).
-		Named("ingress-gatus-config").
+		Named("gatus-config").
 		Watches(&networkingv1.Ingress{}, mapToConfigMap)
 
 	if r.WatchHTTPRoutes {
