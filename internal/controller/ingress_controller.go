@@ -3,7 +3,10 @@ package controller
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 
+	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -87,7 +90,7 @@ func endpointKey(ep gatusEndpoint) string {
 	return fmt.Sprintf("%s|%s|%s|%v", ep.Name, target, ep.Interval, ep.Conditions)
 }
 
-func buildEndpoint(name, host string, tmpl config.CheckTemplate) gatusEndpoint {
+func buildEndpoint(name, host, path string, tmpl config.CheckTemplate) gatusEndpoint {
 	interval := tmpl.Interval
 	if interval == "" {
 		interval = defaultInterval
@@ -106,12 +109,78 @@ func buildEndpoint(name, host string, tmpl config.CheckTemplate) gatusEndpoint {
 		ep.URL = tmpl.DNS.NameServer
 		ep.DNS = &gatusDNS{QueryName: host, QueryType: tmpl.DNS.QueryType}
 	} else {
-		ep.URL = tmpl.Scheme + "://" + host
+		u := url.URL{Scheme: tmpl.Scheme, Host: strings.TrimRight(host, "/"), Path: path}
+		ep.URL = u.String()
 		if tmpl.NoFollowRedirects {
 			ep.Client = &gatusClient{IgnoreRedirect: true}
 		}
 	}
 	return ep
+}
+
+// extractIngressPaths returns the paths defined in an ingress rule.
+// If no paths are found it warns and defaults to "/".
+// DNS check templates should ignore paths and use "/" directly.
+func extractIngressPaths(log logr.Logger, rule networkingv1.IngressRule, key string) []string {
+	if rule.HTTP == nil || len(rule.HTTP.Paths) == 0 {
+		log.Info("ingress rule has no paths, defaulting to /", "ingress", key, "host", rule.Host)
+		return []string{"/"}
+	}
+	paths := make([]string, 0, len(rule.HTTP.Paths))
+	for _, p := range rule.HTTP.Paths {
+		path := p.Path
+		if path == "" {
+			log.Info("ingress rule has empty path, defaulting to /", "ingress", key, "host", rule.Host)
+			path = "/"
+		}
+		paths = append(paths, path)
+	}
+	return paths
+}
+
+// extractHTTPRoutePaths returns the unique concrete paths across all rule matches.
+// RegularExpression paths are skipped with a warning and collapsed to "/".
+// If no paths are found it warns and defaults to "/".
+// DNS check templates should ignore paths and use "/" directly.
+func extractHTTPRoutePaths(log logr.Logger, route gwv1.HTTPRoute, key string) []string {
+	seen := make(map[string]struct{})
+	var paths []string
+	add := func(p string) {
+		if _, ok := seen[p]; !ok {
+			seen[p] = struct{}{}
+			paths = append(paths, p)
+		}
+	}
+	for _, rule := range route.Spec.Rules {
+		if len(rule.Matches) == 0 {
+			log.Info("httproute rule has no matches, defaulting to /", "httproute", key)
+			add("/")
+			continue
+		}
+		for _, match := range rule.Matches {
+			if match.Path == nil || match.Path.Value == nil {
+				log.Info("httproute match has no path, defaulting to /", "httproute", key)
+				add("/")
+				continue
+			}
+			if match.Path.Type != nil && *match.Path.Type == gwv1.PathMatchRegularExpression {
+				log.Info("httproute match has regex path, cannot use as check URL, defaulting to /", "httproute", key, "path", *match.Path.Value)
+				add("/")
+				continue
+			}
+			p := *match.Path.Value
+			if p == "" {
+				log.Info("httproute match has empty path, defaulting to /", "httproute", key)
+				p = "/"
+			}
+			add(p)
+		}
+	}
+	if len(paths) == 0 {
+		log.Info("httproute has no path matches, defaulting to /", "httproute", key)
+		return []string{"/"}
+	}
+	return paths
 }
 
 func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -140,20 +209,31 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			if rule.Host == "" {
 				continue
 			}
+			ingKey := ing.Namespace + "/" + ing.Name
+			paths := extractIngressPaths(log, rule, ingKey)
 			for _, tmpl := range checks {
-				name := fmt.Sprintf("%s/%s", ing.Namespace, ing.Name)
-				if tmpl.NameSuffix != "" {
-					name += " - " + tmpl.NameSuffix
+				effectivePaths := paths
+				if tmpl.DNS != nil {
+					effectivePaths = []string{"/"}
 				}
-				ep := buildEndpoint(name, rule.Host, tmpl)
-				key := endpointKey(ep)
-				if _, ok := seen[key]; ok {
-					log.V(1).Info("skipping duplicate endpoint", "name", name, "host", rule.Host)
-					continue
+				for _, path := range effectivePaths {
+					name := fmt.Sprintf("%s/%s", ing.Namespace, ing.Name)
+					if path != "/" {
+						name += " " + path
+					}
+					if tmpl.NameSuffix != "" {
+						name += " - " + tmpl.NameSuffix
+					}
+					ep := buildEndpoint(name, rule.Host, path, tmpl)
+					epKey := endpointKey(ep)
+					if _, ok := seen[epKey]; ok {
+						log.V(1).Info("skipping duplicate endpoint", "name", name, "host", rule.Host)
+						continue
+					}
+					seen[epKey] = struct{}{}
+					log.V(1).Info("generating endpoint", "name", name, "url", ep.URL)
+					endpoints = append(endpoints, ep)
 				}
-				seen[key] = struct{}{}
-				log.V(1).Info("generating endpoint", "name", name, "url", ep.URL)
-				endpoints = append(endpoints, ep)
 			}
 		}
 	}
@@ -175,25 +255,36 @@ func (r *IngressReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				selectorChecks = match.Selector.Checks
 			}
 			checks := r.resolveChecks(selectorChecks)
+			routeKey := route.Namespace + "/" + route.Name
+			paths := extractHTTPRoutePaths(log, route, routeKey)
 			for _, hostname := range route.Spec.Hostnames {
 				host := string(hostname)
 				if host == "" {
 					continue
 				}
 				for _, tmpl := range checks {
-					name := fmt.Sprintf("%s/%s", route.Namespace, route.Name)
-					if tmpl.NameSuffix != "" {
-						name += " - " + tmpl.NameSuffix
+					effectivePaths := paths
+					if tmpl.DNS != nil {
+						effectivePaths = []string{"/"}
 					}
-					ep := buildEndpoint(name, host, tmpl)
-					key := endpointKey(ep)
-					if _, ok := seen[key]; ok {
-						log.V(1).Info("skipping duplicate endpoint", "name", name, "host", host)
-						continue
+					for _, path := range effectivePaths {
+						name := fmt.Sprintf("%s/%s", route.Namespace, route.Name)
+						if path != "/" {
+							name += " " + path
+						}
+						if tmpl.NameSuffix != "" {
+							name += " - " + tmpl.NameSuffix
+						}
+						ep := buildEndpoint(name, host, path, tmpl)
+						epKey := endpointKey(ep)
+						if _, ok := seen[epKey]; ok {
+							log.V(1).Info("skipping duplicate endpoint", "name", name, "host", host)
+							continue
+						}
+						seen[epKey] = struct{}{}
+						log.V(1).Info("generating endpoint", "name", name, "url", ep.URL)
+						endpoints = append(endpoints, ep)
 					}
-					seen[key] = struct{}{}
-					log.V(1).Info("generating endpoint", "name", name, "url", ep.URL)
-					endpoints = append(endpoints, ep)
 				}
 			}
 		}
