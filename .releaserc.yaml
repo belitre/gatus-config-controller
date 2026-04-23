@@ -67,8 +67,3 @@ plugins:
     - prepareCmd: "VERSION=${nextRelease.version} make docker-login docker-build-push && CHART_VERSION=${nextRelease.version} make helm-login helm-push"
 
   - "@semantic-release/github"
-
-  - - "@semantic-release/git"
-    - assets:
-        - CHANGELOG.md
-      message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
