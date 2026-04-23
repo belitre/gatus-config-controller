@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/belitre/gatus-config-controller/compare/v1.4.1...v1.4.2) (2026-04-23)
+
+### Bug Fixes
+
+* improve logging ([7354e81](https://github.com/belitre/gatus-config-controller/commit/7354e8188d81bc7820787e5d3efff3fc1a4d44fe))
+* more logging improvements ([e6b14bf](https://github.com/belitre/gatus-config-controller/commit/e6b14bf875d6b0c14eaacd3729c2da5e8b0d634c))
+
 ## [1.4.1](https://github.com/belitre/gatus-config-controller/compare/v1.4.0...v1.4.1) (2026-04-20)
 
 ### Bug Fixes
