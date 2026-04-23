@@ -34,7 +34,21 @@ func Filter(log logr.Logger, routes []gwv1.HTTPRoute, selectors []config.HTTPRou
 		matched := false
 		for i := range selectors {
 			if matchesSelector(log, i, route, selectors[i]) {
-				log.V(1).Info("httproute matched selector", "httproute", key, "selector", i)
+				fields := []interface{}{"httproute", key, "selector", i}
+				sel := selectors[i]
+				if sel.Namespaces != nil {
+					fields = append(fields, "namespace", route.Namespace, "namespaceInclude", sel.Namespaces.Include, "namespaceExclude", sel.Namespaces.Exclude)
+				}
+				if sel.Labels != nil {
+					fields = append(fields, "routeLabels", route.Labels, "labelInclude", sel.Labels.Include, "labelExclude", sel.Labels.Exclude)
+				}
+				if sel.Annotations != nil {
+					fields = append(fields, "routeAnnotations", route.Annotations, "annotationInclude", sel.Annotations.Include, "annotationExclude", sel.Annotations.Exclude)
+				}
+				if sel.ParentRefs != nil {
+					fields = append(fields, "routeParentRefs", route.Spec.ParentRefs, "parentRefInclude", sel.ParentRefs.Include, "parentRefExclude", sel.ParentRefs.Exclude)
+				}
+				log.Info("httproute matched selector", fields...)
 				results = append(results, MatchResult{Route: route, Selector: &selectors[i]})
 				matched = true
 			}
